@@ -1,0 +1,10 @@
+Extract:
+Find_/_Replace({'option':'Regex','string':','},'',true,false,false,false)
+Remove_whitespace(true,true,true,true,true,false)
+From_Hex('0x')
+Gunzip()
+
+Compile:
+Gzip('Dynamic Huffman Coding','','',false)
+To_Hex('0x',0)
+Split('0x',',0x')
