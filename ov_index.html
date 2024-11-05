@@ -5,11 +5,15 @@
         <meta name="viewport" content="width=device-width,initial-scale=1">
         <title>ESP32 OV2460</title>
         <style>
+            html, body {
+                margin: 0;
+                height: 100%;
+            }
             body {
                 font-family: Arial,Helvetica,sans-serif;
-                background: #181818;
-                color: #EFEFEF;
-                font-size: 16px
+                background: #EFEFEF;
+                color: #181818;
+                font-size: 16px;
             }
 
             h2 {
@@ -17,7 +21,7 @@
             }
 
             section.main {
-                display: flex
+                display: flex;
             }
 
             #menu,section.main {
@@ -25,10 +29,9 @@
             }
 
             #menu {
-                display: none;
+                display: flex;
                 flex-wrap: nowrap;
                 min-width: 340px;
-                background: #363636;
                 padding: 8px;
                 border-radius: 4px;
                 margin-top: -10px;
@@ -38,7 +41,10 @@
             #content {
                 display: flex;
                 flex-wrap: wrap;
-                align-items: stretch
+                flex-direction: column;
+                align-items: center;
+                justify-content: center;
+                margin:15% 20%;
             }
 
             figure {
@@ -97,22 +103,6 @@
                 justify-content: space-between
             }
 
-            #nav-toggle {
-                cursor: pointer;
-                display: block
-            }
-
-            #nav-toggle-cb {
-                outline: 0;
-                opacity: 0;
-                width: 0;
-                height: 0
-            }
-
-            #nav-toggle-cb:checked+#menu {
-                display: flex
-            }
-
             .input-group {
                 display: flex;
                 flex-wrap: nowrap;
@@ -147,17 +137,6 @@
                 border-radius: 5px;
                 font-size: 16px;
                 outline: 0
-            }
-
-            .save {
-                position: absolute;
-                right: 25px;
-                top: 0px;
-                height: 16px;
-                line-height: 16px;
-                padding: 0 4px;
-                text-decoration: none;
-                cursor: pointer
             }
 
             button:hover {
@@ -381,12 +360,16 @@
     </head>
     <body>
         <section class="main">
-            <div id="logo">
-                <label for="nav-toggle-cb" id="nav-toggle">&#9776;&nbsp;&nbsp;Toggle OV2640 settings</label>
-            </div>
+            
             <div id="content">
+                <h1 style="text-align: center;">Sistem Monitoring Lonely Death</h1>
+                <figure>
+                  <div id="stream-container" class="image-container hidden">
+                      <div class="close" id="close-stream">X</div>
+                      <img id="stream" src="" crossorigin>
+                  </div>
+                </figure>
                 <div id="sidebar">
-                    <input type="checkbox" id="nav-toggle-cb" checked="checked">
                     <nav id="menu">
                         <div class="input-group" id="framesize-group">
                             <label for="framesize">Resolution</label>
@@ -434,17 +417,12 @@
                         </div>
                         <section id="buttons">
                             <button id="get-still">Get Still</button>
+                            <a id="save-still" href="#" class="button save hidden" download="capture.jpg">Save</a>
                             <button id="toggle-stream">Start Stream</button>
                         </section>                
                     </nav>
                 </div>
-                <figure>
-                    <div id="stream-container" class="image-container hidden">
-                        <a id="save-still" href="#" class="button save" download="capture.jpg">Save</a>
-                        <div class="close" id="close-stream">Ã</div>
-                        <img id="stream" src="" crossorigin>
-                    </div>
-                </figure>
+                
             </div>
         </section>
         <script>
@@ -622,12 +600,15 @@ document.addEventListener('DOMContentLoaded', function (event) {
 
   const stopStream = () => {
     window.stop();
+    hide(viewContainer)
+    hide(saveButton)
     streamButton.innerHTML = 'Start Stream'
   }
 
   const startStream = () => {
     view.src = `${streamUrl}/stream`
     show(viewContainer)
+    show(saveButton);
     streamButton.innerHTML = 'Stop Stream'
   }
 
@@ -636,11 +617,11 @@ document.addEventListener('DOMContentLoaded', function (event) {
     stopStream()
     view.src = `${baseHost}/capture?_cb=${Date.now()}`
     show(viewContainer)
+    show(saveButton);
   }
 
   closeButton.onclick = () => {
     stopStream()
-    hide(viewContainer)
   }
 
   streamButton.onclick = () => {
