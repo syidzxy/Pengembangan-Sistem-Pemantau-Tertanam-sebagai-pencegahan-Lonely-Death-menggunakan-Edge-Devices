@@ -22,6 +22,9 @@
 const char* ssid = "Tes123wifi";
 const char* password = "txcn6914";
 
+const byte ledPins[4] = {32, 33, 14, 12};
+const byte buzzerPin = 13;
+
 void startCameraServer();
 void setupLedFlash(int pin);
 
@@ -114,6 +117,11 @@ void setup() {
 #if defined(LED_GPIO_NUM)
   setupLedFlash(LED_GPIO_NUM);
 #endif
+
+  for(auto ledPin : ledPins) {
+    pinMode(ledPin, OUTPUT);
+    digitalWrite(ledPin, LOW);
+  }
 
   WiFi.begin(ssid, password);
   WiFi.setSleep(false);
