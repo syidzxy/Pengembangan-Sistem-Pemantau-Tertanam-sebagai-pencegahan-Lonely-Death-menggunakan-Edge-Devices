@@ -1,3 +1,4 @@
+#include <Arduino.h>
 #include "esp_http_server.h"
 #include "esp_timer.h"
 #include "esp_camera.h"
@@ -24,6 +25,9 @@ static const char *_STREAM_PART = "Content-Type: image/jpeg\r\nContent-Length: %
 
 httpd_handle_t stream_httpd = NULL;
 httpd_handle_t camera_httpd = NULL;
+
+const byte ledPins[4] = {32, 33, 14, 12};
+const byte buzzerPin = 13;
 
 typedef struct
 {
@@ -432,6 +436,32 @@ static esp_err_t index_handler(httpd_req_t *req)
     }
 }
 
+static esp_err_t test_led_handler(httpd_req_t *req)
+{
+    for(int i = 0; i < 5; i++){
+        for(int pin : ledPins) {
+            digitalWrite(pin, HIGH);
+        }
+        delay(500);
+        for(int pin : ledPins) {
+            digitalWrite(pin, LOW);
+        }
+        delay(500);
+    }
+    return httpd_resp_send(req, "Turned on and off leds 5 times", HTTPD_RESP_USE_STRLEN);
+}
+
+static esp_err_t test_buzzer_handler(httpd_req_t *req)
+{
+    for(int i = 0; i < 5; i++){
+        digitalWrite(buzzerPin, HIGH);
+        delay(1000);
+        digitalWrite(buzzerPin, LOW);
+        delay(1000);
+    }
+    return httpd_resp_send(req, "Turned on and off Buzzer", HTTPD_RESP_USE_STRLEN);
+}
+
 void startCameraServer()
 {
     httpd_config_t config = HTTPD_DEFAULT_CONFIG();
@@ -501,6 +531,30 @@ void startCameraServer()
         .supported_subprotocol = NULL
 #endif
     };
+    httpd_uri_t led_uri = {
+        .uri = "/test_led",
+        .method = HTTP_GET,
+        .handler = test_led_handler,
+        .user_ctx = NULL
+#ifdef CONFIG_HTTPD_WS_SUPPORT
+        ,
+        .is_websocket = true,
+        .handle_ws_control_frames = false,
+        .supported_subprotocol = NULL
+#endif
+    };
+    httpd_uri_t buzzer_uri = {
+        .uri = "/test_buzzer",
+        .method = HTTP_GET,
+        .handler = test_buzzer_handler,
+        .user_ctx = NULL
+#ifdef CONFIG_HTTPD_WS_SUPPORT
+        ,
+        .is_websocket = true,
+        .handle_ws_control_frames = false,
+        .supported_subprotocol = NULL
+#endif
+    };
 
     ra_filter_init(&ra_filter, 20);
 
@@ -511,6 +565,8 @@ void startCameraServer()
         httpd_register_uri_handler(camera_httpd, &cmd_uri);
         httpd_register_uri_handler(camera_httpd, &status_uri);
         httpd_register_uri_handler(camera_httpd, &capture_uri);
+        httpd_register_uri_handler(camera_httpd, &led_uri);
+        httpd_register_uri_handler(camera_httpd, &buzzer_uri);
     }
 
     config.server_port += 1;
