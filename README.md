@@ -14,7 +14,8 @@ Sistem ini dirancang untuk mencegah lonely death pada lansia dengan memanfaatkan
 - Algoritma Pemrosesan: Convolutional Neural Network (CNN)
 - Kelas yang Dideteksi: Kosong, Berdiri, Duduk, Berbaring
 
-## 📝**Diagram sistem**
-<img src="D:\Downloads/Flowchart-sistem.jpg" alt="Diagram Sistem" width="500">
+## 📝**Flowchart Sistem**
+<img src="Flowchart sistem.jpg" alt="Flowchart" width="500">
+
 
   
