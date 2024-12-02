@@ -17,5 +17,9 @@ Sistem ini dirancang untuk mencegah lonely death pada lansia dengan memanfaatkan
 ## 📝**Flowchart Sistem**
 <img src="Flowchart sistem.jpg" alt="Flowchart" width="500">
 
+## 📝**Alur Komunikasi**
+<img src="alur komunikasi.png" alt="Alur Komunikasi" width="500">
+
+
 
   
