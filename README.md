@@ -11,8 +11,8 @@ Sistem ini dirancang untuk mencegah lonely death pada lansia dengan memanfaatkan
 - Buzzer
 - Edge Gateway: PC Windows OS
 - Protokol Komunikasi: TCP/IP
-- Algoritma Pemrosesan: Convolutional Neural Network (CNN)
-- Kelas yang Dideteksi: Kosong, Berdiri, Duduk, Berbaring
+- Algoritma Pemrosesan: ResNet 101 + Convolutional Neural Network (CNN)
+- Kelas yang Dideteksi: Berdiri, Duduk, Berbaring
 
 ## 📝**Flowchart Sistem**
 <img src="Flowchart sistem.jpg" alt="Flowchart" width="500">
