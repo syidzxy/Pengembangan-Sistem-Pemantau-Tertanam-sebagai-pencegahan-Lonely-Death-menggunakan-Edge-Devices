@@ -521,7 +521,9 @@ static esp_err_t timer_handler(httpd_req_t *req) {
             digitalWrite(buzzerPin, HIGH); // Turn on buzzer
             delay(3000); // Penundaan 3 detik
             digitalWrite(buzzerPin, 0); // Turn off buzzer
-            log_i("Buzzer Off");
+            Serial.println("Buzzer Off");
+            Serial.println("Timer Reset!!");
+            timer = 0;
         }
     } else {
         // Reset everything if the status is not "sleeping"
