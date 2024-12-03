@@ -1,3 +1,4 @@
+#include <Arduino.h>
 #include "esp_http_server.h"
 #include "esp_timer.h"
 #include "esp_camera.h"
@@ -10,6 +11,19 @@
 #if defined(ARDUINO_ARCH_ESP32) && defined(CONFIG_ARDUHAL_ESP_LOG)
 #include "esp32-hal-log.h"
 #endif
+
+// Global variables
+static char current_status[4] = "non";
+static uint8_t timer = 0;
+static bool gpio_initialized = false;
+static bool buzzer_active = false;
+
+// GPIO pins
+//const gpio_num_t led_pins[4] = {GPIO_NUM_32, GPIO_NUM_14, GPIO_NUM_33, GPIO_NUM_12};
+//const gpio_num_t buzzer_pin = GPIO_NUM_13;
+
+const byte ledPins[4] = {32, 33, 14, 12};
+const byte buzzerPin = 13;
 
 typedef struct
 {
@@ -432,6 +446,257 @@ static esp_err_t index_handler(httpd_req_t *req)
     }
 }
 
+static esp_err_t classify_handler(httpd_req_t *req) {
+    char buf[100];
+    int ret = httpd_req_recv(req, buf, sizeof(buf));
+    if (ret <= 0) {
+        httpd_resp_set_status(req, "400 Bad Request");
+        httpd_resp_send(req, "Bad Request", HTTPD_RESP_USE_STRLEN);
+        return ESP_FAIL;
+    }
+
+    // Extract status parameter
+    char *status = strstr(buf, "status=");
+    if (!status) {
+        httpd_resp_set_status(req, "400 Bad Request");
+        httpd_resp_send(req, "Missing 'status' parameter", HTTPD_RESP_USE_STRLEN);
+        return ESP_FAIL;
+    }
+    status += 7; // Skip "status=" to get the actual value
+
+    // Update the current status if it has changed
+    if (strcmp(status, current_status) != 0) {
+        strncpy(current_status, status, sizeof(current_status) - 1);
+        current_status[sizeof(current_status) - 1] = '\0';
+
+        // Reset timer and buzzer state
+        timer = 0;
+        buzzer_active = false;
+
+        // Turn off all LEDs
+        for (int i = 0; i < 4; i++) {
+            digitalWrite(ledPins[i], LOW);
+        }
+
+        Serial.print("Updated classification status: ");
+        Serial.println(current_status);
+    }
+
+    httpd_resp_send(req, "Classification received", HTTPD_RESP_USE_STRLEN);
+    return ESP_OK;
+}
+
+static esp_err_t timer_handler(httpd_req_t *req) {
+    // Initialize GPIOs if not already done
+    Serial.print("Status: ");
+    Serial.println(current_status);
+    Serial.println(sizeof(current_status)/sizeof(char));
+        for (int i = 0; i < 4; i++) {
+
+            digitalWrite(ledPins[i], LOW); // Start LEDs OFF
+        }
+        digitalWrite(buzzerPin, LOW); // Start buzzer OFF
+    
+    // Handle the "sleeping" status
+    if (strcmp(current_status, "TDR") == 0) {
+        if (timer < 16) {
+            timer++; // Increment the timer
+            Serial.print("Timer ON :");
+            Serial.println(timer);
+            Serial.print("status :");
+            Serial.println(current_status);
+        }
+
+        // Update LEDs based on the timer
+        for (int i = 0; i < 4; i++) {
+            if (timer >= (i + 1) * 4) {
+                digitalWrite(ledPins[i], HIGH); // Turn on LED
+            }
+        }
+
+        // Trigger the buzzer when the timer reaches 16
+        if (timer == 16 && !buzzer_active) {
+            buzzer_active = true;
+            Serial.println("Buzzer On");
+            digitalWrite(buzzerPin, HIGH); // Turn on buzzer
+            delay(3000); // Penundaan 3 detik
+            digitalWrite(buzzerPin, 0); // Turn off buzzer
+            Serial.println("Buzzer Off");
+            Serial.println("Timer Reset!!");
+            timer = 0;
+        }
+    } else {
+        // Reset everything if the status is not "sleeping"
+        timer = 0;
+        buzzer_active = false;
+        for (int i = 0; i < 4; i++) {
+            digitalWrite(ledPins[i], LOW); // Turn off LEDs
+        }
+        Serial.println("Human not sleep!!");
+    }
+
+
+    // Respond to the HTTP request
+    httpd_resp_send(req, "Timer handler executed", HTTPD_RESP_USE_STRLEN);
+    return ESP_OK;
+}
+
+static esp_err_t test_led_handler(httpd_req_t *req)
+{
+    for(int i = 0; i < 5; i++){
+        for(int pin : ledPins) {
+            digitalWrite(pin, HIGH);
+        }
+        delay(500);
+        for(int pin : ledPins) {
+            digitalWrite(pin, LOW);
+        }
+        delay(500);
+    }
+    return httpd_resp_send(req, "Turned on and off leds 5 times", HTTPD_RESP_USE_STRLEN);
+}
+
+static esp_err_t test_buzzer_handler(httpd_req_t *req)
+{
+    for(int i = 0; i < 5; i++){
+        digitalWrite(buzzerPin, HIGH);
+        delay(1000);
+        digitalWrite(buzzerPin, LOW);
+        delay(1000);
+    }
+    return httpd_resp_send(req, "Turned on and off Buzzer", HTTPD_RESP_USE_STRLEN);
+}
+
+
+/*
+static esp_err_t buzzer_handler(httpd_req_t *req) {
+    char buf[10];
+    int ret = httpd_req_recv(req, buf, sizeof(buf) - 1); // Read the request data
+    if (ret <= 0) {
+        httpd_resp_send_500(req);
+        return ESP_FAIL;
+    }
+    buf[ret] = '\0'; // Null-terminate the string
+
+    // Parse the "state" parameter
+    char *state = strstr(buf, "state=");
+    if (!state) {
+        httpd_resp_send_500(req);
+        return ESP_FAIL;
+    }
+    state += 6; // Skip "state=" to get the actual value
+
+    // Update the buzzer state
+    const gpio_num_t buzzer_pin = GPIO_NUM_13;
+    if (strcmp(state, "on") == 0) {
+        gpio_set_level(buzzer_pin, 1); // Turn the buzzer ON
+        httpd_resp_send(req, "Buzzer ON", HTTPD_RESP_USE_STRLEN);
+    } else if (strcmp(state, "off") == 0) {
+        gpio_set_level(buzzer_pin, 0); // Turn the buzzer OFF
+        httpd_resp_send(req, "Buzzer OFF", HTTPD_RESP_USE_STRLEN);
+    } else {
+        httpd_resp_send_500(req); // Invalid state
+        return ESP_FAIL;
+    }
+
+    return ESP_OK;
+}
+
+/*
+static esp_err_t classify_handler(httpd_req_t *req)
+{
+    char buf[100];
+    int ret = httpd_req_recv(req, buf, sizeof(buf));
+    if (ret <= 0){
+      //httpd_resp_send_400(req);
+      httpd_resp_set_status(req, "400 bad request");
+      httpd_resp_send(req, "Bad Request", HTTPD_RESP_USE_STRLEN);
+      return ESP_FAIL;
+    }
+
+    //extract status parameter from request
+    char *status = strstr(buf, "status=");
+    if (!status){
+      httpd_resp_set_status(req, "400 Bad Request");
+      httpd_resp_send(req, "Missing 'status' parameter", HTTPD_RESP_USE_STRLEN);
+      return ESP_FAIL;
+      //status += 7;
+      //process the status
+      //log_i("Received classification status: %s", status);
+    }
+    
+    status += 7;
+    log_i("Received classification status: %s", status);
+    
+    //gpio pin config
+    const gpio_num_t led_pins[4] = {GPIO_NUM_32, GPIO_NUM_14, GPIO_NUM_33, GPIO_NUM_12};
+    const gpio_num_t buzzer_pin = GPIO_NUM_13;
+    static uint8_t timer = 0;
+    static char current_status[20] = "none";
+    static bool gpio_initialized = false;
+    static bool buzzer_active = false;
+    
+    //gpio init
+    if (!gpio_initialized){
+      gpio_initialized = true;
+      for (int i = 0; i < 4; i++){
+        gpio_reset_pin(led_pins[i]);
+        gpio_set_direction(led_pins[i], GPIO_MODE_OUTPUT);
+        gpio_set_level(led_pins[i], 0); //start led off
+      }
+      gpio_reset_pin(buzzer_pin);
+      gpio_set_direction(buzzer_pin, GPIO_MODE_OUTPUT);
+      gpio_set_level(buzzer_pin, 0); //start buzzer off
+    }
+
+    //check classification if changed
+    if (strcmp(status, current_status) != 0){
+      strncpy(current_status, status, sizeof(current_status) - 1);
+      current_status[sizeof(current_status) - 1] = '\0';
+      timer = 0;
+      buzzer_active = false;
+      for (int i = 0; i < 4; i++){
+        gpio_set_level(led_pins[i], 0);
+      }
+    }
+    //process status
+    if (strcmp(current_status, "TIDUR") == 0){
+      if (timer < 16) {
+        timer++; //timer increment
+      }
+      //led biner update
+      for (int i = 0; i < 4; i++){
+        if (timer >= (i + 1) * 4){
+          gpio_set_level(led_pins[i], 1);
+        }
+        //int bit = (timer >> i) & 1; //extract the i-th bit
+        //gpio_set_level(led_pins[i], bit); //set led based on the bit
+      }
+      //buzzer trigger when timer reaches 16 seconds
+      if (timer == 16 && !buzzer_active){
+        buzzer_active = true;
+        log_i("Buzzer On");
+        gpio_set_level(buzzer_pin, 1); //buzzer on
+        vTaskDelay(pdMS_TO_TICKS(3000)); //3 second delay
+        gpio_set_level(buzzer_pin, 0); //buzzer off
+        log_i("Buzzer Off");
+        //buzzer_active = false;
+      }
+    }else{
+      //reset timer & led off because clasification changes
+      timer = 0;
+      buzzer_active = false; //buzzer turn off
+      for (int i =0; i < 4; i++) {
+        gpio_set_level(led_pins[i], 0); //led turn off
+      }
+      //buzzer_active = false; //buzzer turn off
+    }
+
+  httpd_resp_send(req, "Classification received", HTTPD_RESP_USE_STRLEN);
+  return ESP_OK;
+}
+*/
+
 void startCameraServer()
 {
     httpd_config_t config = HTTPD_DEFAULT_CONFIG();
@@ -489,6 +754,19 @@ void startCameraServer()
 #endif
     };
 
+    httpd_uri_t classify_uri = {
+        .uri = "/classify",
+        .method = HTTP_POST,
+        .handler = classify_handler,
+        .user_ctx = NULL
+#ifdef CONFIG_HTTPD_WS_SUPPORT
+        ,
+        .is_websocket = true,
+        .handle_ws_control_frames = false,
+        .supported_subprotocol = NULL
+#endif
+    };
+
     httpd_uri_t stream_uri = {
         .uri = "/stream",
         .method = HTTP_GET,
@@ -501,7 +779,69 @@ void startCameraServer()
         .supported_subprotocol = NULL
 #endif
     };
+        httpd_uri_t timer_uri = {
+        .uri = "/timer",
+        .method = HTTP_GET,
+        .handler = timer_handler,
+        .user_ctx = NULL
+#ifdef CONFIG_HTTPD_WS_SUPPORT
+        ,
+        .is_websocket = true,
+        .handle_ws_control_frames = false,
+        .supported_subprotocol = NULL
+#endif
+    };
+     httpd_uri_t led_uri = {
+        .uri = "/test_led",
+        .method = HTTP_GET,
+        .handler = test_led_handler,
+        .user_ctx = NULL
+#ifdef CONFIG_HTTPD_WS_SUPPORT
+        ,
+        .is_websocket = true,
+        .handle_ws_control_frames = false,
+        .supported_subprotocol = NULL
+#endif
+    };
+    httpd_uri_t buzzer_uri = {
+        .uri = "/test_buzzer",
+        .method = HTTP_GET,
+        .handler = test_buzzer_handler,
+        .user_ctx = NULL
+#ifdef CONFIG_HTTPD_WS_SUPPORT
+        ,
+        .is_websocket = true,
+        .handle_ws_control_frames = false,
+        .supported_subprotocol = NULL
+#endif
+    };
 
+/*
+    httpd_uri_t leds_uri = {
+      .uri       = "/leds",
+      .method    = HTTP_GET,
+      .handler   = leds_handler,
+      .user_ctx  = NULL
+#ifdef CONFIG_HTTPS_WS_SUPPORT
+      ,
+      .is_websocket = true,
+      .handle_ws_control_frames = false,
+      .supported_subrpotocol = NULL
+#endif
+    };    
+    httpd_uri_t buzzer_uri = {
+      .uri       = "/buzzer",
+      .method    = HTTP_GET,
+      .handler   = buzzer_handler,
+      .user_ctx  = NULL
+#ifdef CONFIG_HTTPS_WS_SUPPORT
+      ,
+      .is_websocket = true,
+      .handle_ws_control_frames = false,
+      .supported_subrpotocol = NULL
+#endif
+    };   
+*/
     ra_filter_init(&ra_filter, 20);
 
     log_i("Starting web server on port: '%d'", config.server_port);
@@ -511,6 +851,11 @@ void startCameraServer()
         httpd_register_uri_handler(camera_httpd, &cmd_uri);
         httpd_register_uri_handler(camera_httpd, &status_uri);
         httpd_register_uri_handler(camera_httpd, &capture_uri);
+        httpd_register_uri_handler(camera_httpd, &classify_uri);
+        httpd_register_uri_handler(camera_httpd, &timer_uri);
+        //httpd_register_uri_handler(camera_httpd, &buzzer_uri);
+        httpd_register_uri_handler(camera_httpd, &led_uri);
+        httpd_register_uri_handler(camera_httpd, &buzzer_uri);
     }
 
     config.server_port += 1;
