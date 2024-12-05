@@ -1,2 +1,3 @@
 .skip.esp32c3
 partitions.csv
+posture_classifier_resnet_v0.3.h5
