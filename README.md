@@ -33,6 +33,7 @@ ESP32 berperan sebagai sebuah Server dimana akan menyediakan data seperti tangka
 <img src="assets/alur komunikasi.png" alt="Alur Komunikasi" width="500">
 
 ## 📝**Schematic ESP**
-<img src="assets/Schematic ESP" alt="Alur Komunikasi" width="500">
+<img src="assets/Schematic ESP" alt="schematic esp" width="500">
   
-## 🧪**Demo Sistem**
+## 🎥**Demo Sistem**
+<video src="assets/Demo sistem.mp4" controls width="800"></video>
