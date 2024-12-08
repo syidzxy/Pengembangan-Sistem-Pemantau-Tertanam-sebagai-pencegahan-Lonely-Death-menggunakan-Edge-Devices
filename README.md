@@ -37,3 +37,9 @@ ESP32 berperan sebagai sebuah Server dimana akan menyediakan data seperti tangka
   
 ## 🎥**Demo Sistem**
 Video demo sistem [Google Drive](https://drive.google.com/file/d/1GDtVoEBxEhWDBnP2TLctg90ebRj87ZnJ/view?usp=drive_link).
+
+## 💡**Kesimpulan**
+Sistem Monitoring Lonely Death adalah solusi inovatif yang dirancang untuk meningkatkan pengawasan kondisi lansia dengan memanfaatkan teknologi Edge AI. Sistem ini menggunakan ESP32-WROVER-CAM dan algoritma ResNet101 untuk mendeteksi postur tubuh secara real-time, seperti berdiri, duduk, atau berbaring, dan memberikan peringatan jika mendeteksi kondisi abnormal, seperti berbaring tanpa gerakan dalam waktu lama. Dengan memanfaatkan komunikasi TCP/IP antara ESP32 sebagai server dan Edge Gateway untuk pemrosesan data, sistem ini menghadirkan deteksi yang cepat, akurat, dan efisien. Solusi ini tidak hanya hemat biaya dengan perangkat terjangkau, tetapi juga mendukung privasi data melalui pengolahan lokal. Melalui pendekatan ini, sistem dapat meningkatkan kualitas hidup lansia sekaligus menjadi landasan bagi pengembangan teknologi pengawasan cerdas berbasis Edge AI di masa depan.
+
+
+## 🙏🏻**Terima Kasih**
