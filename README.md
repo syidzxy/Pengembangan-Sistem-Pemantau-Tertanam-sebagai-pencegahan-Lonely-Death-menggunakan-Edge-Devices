@@ -20,7 +20,6 @@ Sistem ini dirancang untuk mencegah lonely death pada lansia dengan memanfaatkan
 ## 📝**Alur Komunikasi**
 <img src="assets/alur komunikasi.png" alt="Alur Komunikasi" width="500">
 
-## 📝**Alur Komunikasi**
-<img src="assets/alur komunikasi.png" alt="Alur Komunikasi" width="500">
-
+## 📝**Schematic ESP**
+<img src="assets/Schematic ESP" alt="Alur Komunikasi" width="500">
   
